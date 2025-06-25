@@ -36,11 +36,4 @@ Open browser to `http://localhost:5173`
 - **15% increase** in profit margins  
 - **$200M+ annual savings** for Walmart
 
-## 🔧 Project Structure
-```
-src/
-├── components/Dashboard.jsx    # Main dashboard UI
-├── data/products.js           # 1000+ sample products
-├── utils/pricingLogic.js      # Core AI algorithms
-└── App.jsx                    # Main app component
-```
+
