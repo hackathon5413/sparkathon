@@ -1,174 +1,70 @@
-:root {
-  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
-
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  -webkit-text-size-adjust: 100%;
-}
-
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
-
-body {
-  font-family: 'Inter', sans-serif;
-  background-color: #f5f5f5;
-  color: #333;
-}
-
-.walmart-blue {
-  color: #0071ce;
-}
-
-.walmart-yellow {
-  color: #ffc220;
-}
-
-.bg-walmart-blue {
-  background-color: #0071ce;
-}
-
-.bg-walmart-yellow {
-  background-color: #ffc220;
-}
-
-.alert-red {
-  background-color: #fee2e2;
-  color: #dc2626;
-  border: 1px solid #fca5a5;
-}
-
-.alert-yellow {
-  background-color: #fef3c7;
-  color: #d97706;
-  border: 1px solid #fcd34d;
-}
-
-.alert-green {
-  background-color: #dcfce7;
-  color: #16a34a;
-  border: 1px solid #86efac;
-}
-
-.card {
-  background: white;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  padding: 1.5rem;
-  margin-bottom: 1rem;
-}
-
-.btn {
-  padding: 0.5rem 1rem;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-weight: 500;
-  transition: all 0.2s;
-}
-
-.btn-primary {
-  background-color: #0071ce;
-  color: white;
-}
-
-.btn-primary:hover {
-  background-color: #005a9e;
-}
-
-.btn-success {
-  background-color: #16a34a;
-  color: white;
-}
-
-.btn-success:hover {
-  background-color: #15803d;
-}
-
-.btn-warning {
-  background-color: #d97706;
-  color: white;
-}
-
-.btn-warning:hover {
-  background-color: #b45309;
-}
-
-.table {
-  width: 100%;
-  border-collapse: collapse;
-  background: white;
-  border-radius: 8px;
-  overflow: hidden;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.table th,
-.table td {
-  padding: 0.75rem;
-  text-align: left;
-  border-bottom: 1px solid #e5e7eb;
-}
-
-.table th {
-  background-color: #f9fafb;
-  font-weight: 600;
-  color: #374151;
-}
-
-.table tr:hover {
-  background-color: #f9fafb;
-}
-
-.badge {
-  display: inline-block;
-  padding: 0.25rem 0.5rem;
-  font-size: 0.75rem;
-  font-weight: 500;
-  border-radius: 0.25rem;
-}
-
-.badge-danger {
-  background-color: #fee2e2;
-  color: #dc2626;
-}
-
-.badge-warning {
-  background-color: #fef3c7;
-  color: #d97706;
-}
-
-.badge-success {
-  background-color: #dcfce7;
-  color: #16a34a;
-}
-
-.metric-card {
-  background: linear-gradient(135deg, #0071ce 0%, #004c87 100%);
-  color: white;
-  border-radius: 12px;
-  padding: 1.5rem;
-  text-align: center;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-}
-
-.metric-value {
-  font-size: 2.5rem;
-  font-weight: bold;
-  margin-bottom: 0.5rem;
-}
-
-.metric-label {
-  font-size: 0.875rem;
-  opacity: 0.9;
+/* Custom components using Tailwind's @apply directive */
+@layer components {
+  .metric-card {
+    @apply bg-gradient-to-br from-walmart-blue to-walmart-blue-dark text-white rounded-xl p-6 text-center shadow-lg min-h-[140px] flex flex-col justify-center overflow-hidden;
+  }
+  
+  .metric-value {
+    @apply text-2xl md:text-3xl font-bold mb-2 leading-tight break-words;
+  }
+  
+  .metric-label {
+    @apply text-sm opacity-90 leading-tight;
+  }
+  
+  .btn-primary {
+    @apply bg-walmart-blue hover:bg-walmart-blue-dark text-white font-medium py-2 px-4 rounded transition-colors duration-200;
+  }
+  
+  .btn-success {
+    @apply bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded transition-colors duration-200;
+  }
+  
+  .btn-warning {
+    @apply bg-orange-600 hover:bg-orange-700 text-white font-medium py-2 px-4 rounded transition-colors duration-200;
+  }
+  
+  .card {
+    @apply bg-white rounded-lg shadow-md p-6 mb-4;
+  }
+  
+  .badge {
+    @apply inline-block px-2 py-1 text-xs font-medium rounded;
+  }
+  
+  .badge-danger {
+    @apply bg-red-100 text-red-800;
+  }
+  
+  .badge-warning {
+    @apply bg-yellow-100 text-yellow-800;
+  }
+  
+  .badge-success {
+    @apply bg-green-100 text-green-800;
+  }
+  
+  .table-container {
+    @apply overflow-x-auto;
+  }
+  
+  .table {
+    @apply w-full border-collapse bg-white rounded-lg overflow-hidden shadow-md;
+  }
+  
+  .table th {
+    @apply px-3 py-3 text-left bg-gray-50 font-semibold text-gray-700 border-b border-gray-200;
+  }
+  
+  .table td {
+    @apply px-3 py-3 text-left border-b border-gray-100;
+  }
+  
+  .table tr:hover {
+    @apply bg-gray-50;
+  }
 }

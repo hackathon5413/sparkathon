@@ -64,64 +64,64 @@ const Dashboard = () => {
     return true;
   });
 
-  const MetricCard = ({ title, value, subtitle, icon: Icon, color = "#0071ce" }) => (
-    <div className="metric-card" style={{ background: `linear-gradient(135deg, ${color} 0%, ${color}dd 100%)` }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '0.5rem' }}>
+  const MetricCard = ({ title, value, subtitle, icon: Icon, colorClasses = "from-walmart-blue to-walmart-blue-dark" }) => (
+    <div className={`bg-gradient-to-br ${colorClasses} text-white rounded-xl p-6 text-center shadow-lg min-h-[140px] flex flex-col justify-center`}>
+      <div className="flex items-center justify-center mb-2">
         <Icon size={24} />
       </div>
-      <div className="metric-value">{value}</div>
-      <div className="metric-label">{title}</div>
-      {subtitle && <div style={{ fontSize: '0.75rem', marginTop: '0.25rem', opacity: 0.8 }}>{subtitle}</div>}
+      <div className="text-2xl md:text-3xl font-bold mb-2 leading-tight break-words">{value}</div>
+      <div className="text-sm opacity-90 leading-tight">{title}</div>
+      {subtitle && <div className="text-xs mt-1 opacity-80">{subtitle}</div>}
     </div>
   );
 
   const ProductRow = ({ product }) => {
-    const urgencyColor = getUrgencyColor(product.urgency);
     const badgeClass = product.urgency === 'critical' ? 'badge-danger' : 
                       product.urgency === 'high' ? 'badge-warning' : 'badge-success';
 
     return (
       <tr>
-        <td>
+        <td className="px-3 py-3">
           <div>
-            <div style={{ fontWeight: '500' }}>{product.name}</div>
-            <div style={{ fontSize: '0.875rem', color: '#6b7280' }}>{product.section}</div>
+            <div className="font-medium text-gray-900">{product.name}</div>
+            <div className="text-sm text-gray-500">{product.section}</div>
           </div>
         </td>
-        <td>{product.stock}</td>
-        <td>
-          <span style={{ 
-            color: product.daysToExpiry <= 3 ? '#dc2626' : product.daysToExpiry <= 7 ? '#d97706' : '#16a34a' 
-          }}>
+        <td className="px-3 py-3 text-gray-900">{product.stock}</td>
+        <td className="px-3 py-3">
+          <span className={`font-medium ${
+            product.daysToExpiry <= 3 ? 'text-red-600' : 
+            product.daysToExpiry <= 7 ? 'text-orange-600' : 'text-green-600'
+          }`}>
             {product.daysToExpiry} days
           </span>
         </td>
-        <td>{formatCurrency(product.price)}</td>
-        <td>
+        <td className="px-3 py-3 text-gray-900">{formatCurrency(product.price)}</td>
+        <td className="px-3 py-3">
           {product.discount > 0 ? (
             <div>
-              <div style={{ fontWeight: '500', color: '#dc2626' }}>
+              <div className="font-medium text-red-600">
                 {formatDiscount(product.discount)}
               </div>
-              <div style={{ fontSize: '0.875rem', color: '#16a34a' }}>
+              <div className="text-sm text-green-600">
                 {formatCurrency(product.discountedPrice)}
               </div>
             </div>
           ) : (
-            <span style={{ color: '#6b7280' }}>No discount</span>
+            <span className="text-gray-500">No discount</span>
           )}
         </td>
-        <td>
+        <td className="px-3 py-3">
           <span className={`badge ${badgeClass}`}>
             {product.urgency.toUpperCase()}
           </span>
         </td>
-        <td style={{ fontSize: '0.875rem', color: '#6b7280' }}>
+        <td className="px-3 py-3 text-sm text-gray-600">
           {product.reason}
         </td>
-        <td>
+        <td className="px-3 py-3">
           {product.discount > 0 && (
-            <button className="btn btn-primary" style={{ fontSize: '0.875rem', padding: '0.25rem 0.5rem' }}>
+            <button className="btn-primary text-sm py-1 px-3">
               Apply
             </button>
           )}
@@ -131,93 +131,83 @@ const Dashboard = () => {
   };
 
   return (
-    <div style={{ padding: '2rem', backgroundColor: '#f5f5f5', minHeight: '100vh' }}>
+    <div className="min-h-screen bg-gray-50 p-8">
       {/* Header */}
-      <div style={{ marginBottom: '2rem' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <div className="mb-8">
+        <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center gap-4">
           <div>
-            <h1 style={{ fontSize: '2rem', fontWeight: 'bold', color: '#0071ce', marginBottom: '0.5rem' }}>
+            <h1 className="text-3xl lg:text-4xl font-bold text-walmart-blue mb-2">
               Walmart Dynamic Pricing Dashboard
             </h1>
-            <p style={{ color: '#6b7280' }}>AI-Powered Markdown Recommendations to Reduce Food Waste</p>
+            <p className="text-gray-600">AI-Powered Markdown Recommendations to Reduce Food Waste</p>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-            <label style={{ fontSize: '0.875rem', fontWeight: '500' }}>Simulate Date:</label>
+          <div className="flex items-center gap-4">
+            <label className="text-sm font-medium text-gray-700">Simulate Date:</label>
             <input 
               type="date" 
               value={currentDate.toISOString().split('T')[0]}
               onChange={(e) => setCurrentDate(new Date(e.target.value))}
-              style={{ 
-                padding: '0.5rem', 
-                border: '1px solid #d1d5db', 
-                borderRadius: '4px',
-                fontSize: '0.875rem'
-              }}
+              className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-walmart-blue focus:border-transparent"
             />
           </div>
         </div>
       </div>
 
       {/* Metrics Cards */}
-      <div style={{ 
-        display: 'grid', 
-        gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', 
-        gap: '1rem', 
-        marginBottom: '2rem' 
-      }}>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6 mb-8">
         <MetricCard 
           title="Critical Products" 
           value={dashboardMetrics.criticalProducts || 0}
           subtitle="Need immediate action"
           icon={AlertTriangle}
-          color="#dc2626"
+          colorClasses="from-red-600 to-red-700"
         />
         <MetricCard 
           title="High Priority" 
           value={dashboardMetrics.highPriorityProducts || 0}
           subtitle="Apply discounts today"
           icon={Clock}
-          color="#d97706"
+          colorClasses="from-orange-600 to-orange-700"
         />
         <MetricCard 
           title="Revenue at Risk" 
           value={formatCurrency(dashboardMetrics.totalPotentialLoss || 0)}
           subtitle="Without action"
           icon={TrendingUp}
-          color="#7c3aed"
+          colorClasses="from-purple-600 to-purple-700"
         />
         <MetricCard 
           title="Potential Savings" 
           value={formatCurrency(dashboardMetrics.totalPotentialSavings || 0)}
           subtitle="With AI recommendations"
           icon={DollarSign}
-          color="#16a34a"
+          colorClasses="from-green-600 to-green-700"
         />
         <MetricCard 
           title="Waste Reduction" 
           value={`${(dashboardMetrics.wasteReductionPercent || 0).toFixed(1)}%`}
           subtitle="Expected improvement"
           icon={Package}
-          color="#0891b2"
+          colorClasses="from-cyan-600 to-cyan-700"
         />
         <MetricCard 
           title="Products with Discounts" 
           value={dashboardMetrics.totalDiscountedProducts || 0}
           subtitle={`of ${products.length} total products`}
           icon={ShoppingCart}
-          color="#0071ce"
+          colorClasses="from-walmart-blue to-walmart-blue-dark"
         />
       </div>
 
       {/* Filters */}
-      <div className="card" style={{ marginBottom: '1rem' }}>
-        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-          <div>
-            <label style={{ fontSize: '0.875rem', fontWeight: '500', marginRight: '0.5rem' }}>Category:</label>
+      <div className="card mb-6">
+        <div className="flex flex-col lg:flex-row gap-4 lg:items-center">
+          <div className="flex items-center gap-2">
+            <label className="text-sm font-medium text-gray-700">Category:</label>
             <select 
               value={selectedCategory} 
               onChange={(e) => setSelectedCategory(e.target.value)}
-              style={{ padding: '0.5rem', border: '1px solid #d1d5db', borderRadius: '4px' }}
+              className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-walmart-blue focus:border-transparent"
             >
               <option value="all">All Categories</option>
               {productStats.categories.map(cat => (
@@ -225,12 +215,12 @@ const Dashboard = () => {
               ))}
             </select>
           </div>
-          <div>
-            <label style={{ fontSize: '0.875rem', fontWeight: '500', marginRight: '0.5rem' }}>Urgency:</label>
+          <div className="flex items-center gap-2">
+            <label className="text-sm font-medium text-gray-700">Urgency:</label>
             <select 
               value={selectedUrgency} 
               onChange={(e) => setSelectedUrgency(e.target.value)}
-              style={{ padding: '0.5rem', border: '1px solid #d1d5db', borderRadius: '4px' }}
+              className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-walmart-blue focus:border-transparent"
             >
               <option value="all">All Priorities</option>
               <option value="critical">Critical</option>
@@ -239,8 +229,8 @@ const Dashboard = () => {
               <option value="low">Low</option>
             </select>
           </div>
-          <div style={{ marginLeft: 'auto' }}>
-            <button className="btn btn-success">
+          <div className="lg:ml-auto">
+            <button className="btn-success w-full lg:w-auto">
               Apply All Recommendations ({filteredProducts.filter(p => p.discount > 0).length})
             </button>
           </div>
@@ -248,8 +238,8 @@ const Dashboard = () => {
       </div>
 
       {/* Products Table */}
-      <div className="card" style={{ padding: 0 }}>
-        <div style={{ overflowX: 'auto' }}>
+      <div className="card p-0">
+        <div className="overflow-x-auto">
           <table className="table">
             <thead>
               <tr>
@@ -271,10 +261,10 @@ const Dashboard = () => {
           </table>
         </div>
         {filteredProducts.length > 50 && (
-          <div style={{ padding: '1rem', textAlign: 'center', backgroundColor: '#f9fafb', borderTop: '1px solid #e5e7eb' }}>
-            <p style={{ color: '#6b7280' }}>
+          <div className="px-6 py-4 text-center bg-gray-50 border-t border-gray-200">
+            <p className="text-gray-600">
               Showing 50 of {filteredProducts.length} products. 
-              <button style={{ marginLeft: '0.5rem', color: '#0071ce', background: 'none', border: 'none', textDecoration: 'underline', cursor: 'pointer' }}>
+              <button className="ml-2 text-walmart-blue hover:text-walmart-blue-dark underline">
                 Load more
               </button>
             </p>
