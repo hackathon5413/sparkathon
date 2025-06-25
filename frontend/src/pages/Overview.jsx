@@ -73,17 +73,17 @@ const Overview = () => {
   };
 
   const MetricCard = ({ title, value, subtitle, icon: Icon, colorClasses = "from-walmart-blue to-walmart-blue-dark", trend = null }) => (
-    <div className={`bg-gradient-to-br ${colorClasses} text-white rounded-xl p-6 text-center shadow-lg min-h-[140px] flex flex-col justify-center transition-all duration-300 hover:scale-105 hover:shadow-xl`}>
+    <div className={`bg-gradient-to-br ${colorClasses} text-white rounded-xl p-4 lg:p-6 text-center shadow-lg min-h-[120px] lg:min-h-[140px] flex flex-col justify-center transition-all duration-300 hover:scale-105 hover:shadow-xl`}>
       <div className="flex items-center justify-center mb-2">
-        <Icon size={24} />
+        <Icon size={20} className="lg:w-6 lg:h-6" />
         {trend && (
           <span className={`ml-2 text-xs px-2 py-1 rounded-full ${trend > 0 ? 'bg-green-500' : 'bg-red-500'}`}>
             {trend > 0 ? '+' : ''}{trend}%
           </span>
         )}
       </div>
-      <div className="text-2xl md:text-3xl font-bold mb-2 leading-tight break-words">{value}</div>
-      <div className="text-sm opacity-90 leading-tight">{title}</div>
+      <div className="text-xl lg:text-2xl xl:text-3xl font-bold mb-2 leading-tight break-words">{value}</div>
+      <div className="text-xs lg:text-sm opacity-90 leading-tight">{title}</div>
       {subtitle && <div className="text-xs mt-1 opacity-80">{subtitle}</div>}
     </div>
   );
@@ -97,10 +97,10 @@ const Overview = () => {
     };
 
     return (
-      <div className={`card border-l-4 ${urgencyColors[urgency]} hover:shadow-lg transition-shadow`}>
-        <div className="flex items-center justify-between">
-          <div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-1">{title}</h3>
+      <div className={`card border-l-4 ${urgencyColors[urgency]} hover:shadow-lg transition-shadow p-4 lg:p-6`}>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex-1">
+            <h3 className="text-base lg:text-lg font-semibold text-gray-900 mb-1">{title}</h3>
             <p className="text-gray-600 text-sm mb-3">{description}</p>
             {count > 0 && (
               <span className="inline-block px-2 py-1 bg-walmart-blue text-white text-xs rounded-full mb-3">
@@ -110,7 +110,7 @@ const Overview = () => {
           </div>
           <button
             onClick={onClick}
-            className="btn-primary flex items-center gap-2 hover:scale-105 transition-transform"
+            className="btn-primary flex items-center justify-center gap-2 hover:scale-105 transition-transform w-full sm:w-auto px-4 py-2 text-sm"
           >
             {buttonText}
             <ArrowRight size={16} />
@@ -149,7 +149,7 @@ const Overview = () => {
       </div>
 
       {/* Key Metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 lg:gap-6 mb-8">
         <MetricCard 
           title="Critical Products" 
           value={dashboardMetrics.criticalProducts || 0}
@@ -185,7 +185,7 @@ const Overview = () => {
       </div>
 
       {/* Action Items */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+      <div className="grid grid-cols-1 gap-4 lg:gap-6 mb-8">
         <ActionCard
           title="Critical Actions Required"
           description="Products expiring within 24 hours need immediate markdown"
