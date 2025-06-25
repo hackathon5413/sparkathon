@@ -185,7 +185,7 @@ const Overview = () => {
       </div>
 
       {/* Action Items */}
-      <div className="grid grid-cols-1 gap-4 lg:gap-6 mb-8">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6 mb-8">
         <ActionCard
           title="Critical Actions Required"
           description="Products expiring within 24 hours need immediate markdown"

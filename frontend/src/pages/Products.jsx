@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { 
   Search, ArrowUpDown, ArrowUp, ArrowDown, Filter, Check, X, RefreshCw, Download
 } from 'lucide-react';
@@ -22,6 +22,7 @@ const Products = () => {
   const [displayCount, setDisplayCount] = useState(50);
   const [isLoading, setIsLoading] = useState(false);
   const [showExportModal, setShowExportModal] = useState(false);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
   
   // Filters and search - using shared state
   const { selectedCategory, selectedUrgency, selectedDateRange, searchTerm } = productFilters;
@@ -30,6 +31,7 @@ const Products = () => {
   // Update filter helper
   const updateFilter = (key, value) => {
     setProductFilters(prev => ({ ...prev, [key]: value }));
+    setDisplayCount(50); // Reset display count when filters change
   };
 
   // Process all products with pricing recommendations
@@ -153,10 +155,35 @@ const Products = () => {
     }, 1500);
   };
 
-  // Load more products
-  const loadMore = () => {
-    setDisplayCount(prev => prev + 50);
-  };
+  // Infinite scroll functionality
+  const loadMore = useCallback(() => {
+    if (isLoadingMore || displayCount >= filteredProducts.length) return;
+    
+    setIsLoadingMore(true);
+    // Simulate loading delay for smooth UX
+    setTimeout(() => {
+      setDisplayCount(prev => Math.min(prev + 50, filteredProducts.length));
+      setIsLoadingMore(false);
+    }, 300);
+  }, [isLoadingMore, displayCount, filteredProducts.length]);
+
+  // Intersection Observer for infinite scroll
+  useEffect(() => {
+    const handleScroll = () => {
+      if (window.innerHeight + document.documentElement.scrollTop 
+          >= document.documentElement.offsetHeight - 1000) {
+        loadMore();
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [loadMore]);
+
+  // Reset display count when filters change
+  useEffect(() => {
+    setDisplayCount(50);
+  }, [selectedCategory, selectedUrgency, selectedDateRange, searchTerm, sortConfig]);
 
   // Reset all applied discounts
   const resetAllDiscounts = () => {
@@ -512,17 +539,20 @@ const Products = () => {
         </div>
 
         {/* Load More */}
-        {filteredProducts.length > displayCount && (
+        {displayCount < filteredProducts.length && (
           <div className="px-6 py-4 text-center bg-gray-50 border-t border-gray-200">
-            <p className="text-gray-600 mb-3">
-              Showing {displayCount} of {filteredProducts.length} products
-            </p>
-            <button 
-              onClick={loadMore}
-              className="btn-primary hover:scale-105 transition-transform"
-            >
-              Load More Products (+50)
-            </button>
+            {isLoadingMore ? (
+              <div className="flex items-center justify-center gap-2 text-gray-600">
+                <RefreshCw size={16} className="animate-spin" />
+                <span className="text-sm">Loading more products...</span>
+              </div>
+            ) : (
+              <p className="text-gray-600 text-sm">
+                Showing {displayCount} of {filteredProducts.length} products
+                <br />
+                <span className="text-xs text-gray-500">Scroll down to load more</span>
+              </p>
+            )}
           </div>
         )}
 
