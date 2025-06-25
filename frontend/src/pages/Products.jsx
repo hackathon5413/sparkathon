@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { 
   Search, ArrowUpDown, ArrowUp, ArrowDown, Filter, Check, X, RefreshCw, Download
 } from 'lucide-react';
@@ -22,6 +22,7 @@ const Products = () => {
   const [displayCount, setDisplayCount] = useState(50);
   const [isLoading, setIsLoading] = useState(false);
   const [showExportModal, setShowExportModal] = useState(false);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
   
   // Filters and search - using shared state
   const { selectedCategory, selectedUrgency, selectedDateRange, searchTerm } = productFilters;
@@ -30,6 +31,7 @@ const Products = () => {
   // Update filter helper
   const updateFilter = (key, value) => {
     setProductFilters(prev => ({ ...prev, [key]: value }));
+    setDisplayCount(50); // Reset display count when filters change
   };
 
   // Process all products with pricing recommendations
@@ -153,10 +155,35 @@ const Products = () => {
     }, 1500);
   };
 
-  // Load more products
-  const loadMore = () => {
-    setDisplayCount(prev => prev + 50);
-  };
+  // Infinite scroll functionality
+  const loadMore = useCallback(() => {
+    if (isLoadingMore || displayCount >= filteredProducts.length) return;
+    
+    setIsLoadingMore(true);
+    // Simulate loading delay for smooth UX
+    setTimeout(() => {
+      setDisplayCount(prev => Math.min(prev + 50, filteredProducts.length));
+      setIsLoadingMore(false);
+    }, 300);
+  }, [isLoadingMore, displayCount, filteredProducts.length]);
+
+  // Intersection Observer for infinite scroll
+  useEffect(() => {
+    const handleScroll = () => {
+      if (window.innerHeight + document.documentElement.scrollTop 
+          >= document.documentElement.offsetHeight - 1000) {
+        loadMore();
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [loadMore]);
+
+  // Reset display count when filters change
+  useEffect(() => {
+    setDisplayCount(50);
+  }, [selectedCategory, selectedUrgency, selectedDateRange, searchTerm, sortConfig]);
 
   // Reset all applied discounts
   const resetAllDiscounts = () => {
@@ -364,23 +391,23 @@ const Products = () => {
       )}
 
       {/* Page Header */}
-      <div className="mb-8">
-        <div className="flex items-center justify-between">
+      <div className="mb-6 lg:mb-8">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Products Management</h2>
-            <p className="text-gray-600">Complete product inventory with AI-powered pricing recommendations</p>
+            <h2 className="text-xl lg:text-2xl font-bold text-gray-900 mb-2">Products Management</h2>
+            <p className="text-sm lg:text-base text-gray-600">Complete product inventory with AI-powered pricing recommendations</p>
           </div>
-          <div className="flex gap-3">
+          <div className="flex flex-col sm:flex-row gap-2 lg:gap-3">
             <button 
               onClick={() => setShowExportModal(true)}
-              className="btn-primary flex items-center gap-2"
+              className="btn-primary flex items-center justify-center gap-2 text-sm py-2 px-4"
             >
               <Download size={16} />
               Export
             </button>
             <button 
               onClick={resetAllDiscounts}
-              className="border border-gray-300 px-4 py-2 rounded hover:bg-gray-50 flex items-center gap-2 transition-colors"
+              className="border border-gray-300 px-4 py-2 rounded hover:bg-gray-50 flex items-center justify-center gap-2 transition-colors text-sm"
             >
               <RefreshCw size={16} />
               Reset All
@@ -390,10 +417,10 @@ const Products = () => {
       </div>
 
       {/* Filters and Search */}
-      <div className="card mb-6">
-        <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 mb-4">
+      <div className="card mb-4 lg:mb-6 p-4 lg:p-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 lg:gap-4 mb-4">
           {/* Search */}
-          <div className="flex items-center gap-2">
+          <div className="sm:col-span-2 lg:col-span-1 flex items-center gap-2">
             <Search size={16} className="text-gray-500" />
             <input
               type="text"
@@ -406,7 +433,7 @@ const Products = () => {
 
           {/* Category Filter */}
           <div className="flex items-center gap-2">
-            <Filter size={16} className="text-gray-500" />
+            <Filter size={16} className="text-gray-500 hidden sm:block" />
             <select 
               value={selectedCategory} 
               onChange={(e) => updateFilter('selectedCategory', e.target.value)}
@@ -461,7 +488,7 @@ const Products = () => {
         </div>
 
         {/* Action Bar */}
-        <div className="flex items-center justify-between pt-4 border-t border-gray-200">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between pt-3 lg:pt-4 border-t border-gray-200 gap-3">
           <div className="text-sm text-gray-600">
             Showing {Math.min(displayCount, filteredProducts.length)} of {filteredProducts.length} products
             {searchTerm || selectedCategory !== 'all' || selectedUrgency !== 'all' || selectedDateRange !== 'all' ? 
@@ -470,7 +497,7 @@ const Products = () => {
           <button 
             onClick={applyAllRecommendations}
             disabled={isLoading || filteredProducts.filter(p => p.discount > 0 && !p.isApplied).length === 0}
-            className="btn-success flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed hover:scale-105 transition-transform"
+            className="btn-success flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed hover:scale-105 transition-transform text-sm py-2 px-4"
           >
             {isLoading ? (
               <>
@@ -480,7 +507,7 @@ const Products = () => {
             ) : (
               <>
                 <Check size={16} />
-                Apply All Recommendations ({filteredProducts.filter(p => p.discount > 0 && !p.isApplied).length})
+                Apply All ({filteredProducts.filter(p => p.discount > 0 && !p.isApplied).length})
               </>
             )}
           </button>
@@ -512,17 +539,20 @@ const Products = () => {
         </div>
 
         {/* Load More */}
-        {filteredProducts.length > displayCount && (
+        {displayCount < filteredProducts.length && (
           <div className="px-6 py-4 text-center bg-gray-50 border-t border-gray-200">
-            <p className="text-gray-600 mb-3">
-              Showing {displayCount} of {filteredProducts.length} products
-            </p>
-            <button 
-              onClick={loadMore}
-              className="btn-primary hover:scale-105 transition-transform"
-            >
-              Load More Products (+50)
-            </button>
+            {isLoadingMore ? (
+              <div className="flex items-center justify-center gap-2 text-gray-600">
+                <RefreshCw size={16} className="animate-spin" />
+                <span className="text-sm">Loading more products...</span>
+              </div>
+            ) : (
+              <p className="text-gray-600 text-sm">
+                Showing {displayCount} of {filteredProducts.length} products
+                <br />
+                <span className="text-xs text-gray-500">Scroll down to load more</span>
+              </p>
+            )}
           </div>
         )}
 
