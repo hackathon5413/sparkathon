@@ -21,7 +21,7 @@ const App = () => {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   
-  // Shared filter state for Products page
+
   const [productFilters, setProductFilters] = useState({
     selectedCategory: 'all',
     selectedUrgency: 'all',
