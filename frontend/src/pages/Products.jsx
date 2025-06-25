@@ -11,8 +11,10 @@ import {
   formatDiscount,
   getDaysUntilExpiry
 } from '../utils/pricingLogic';
+import { useAppContext } from '../App';
 
-const Products = ({ currentDate }) => {
+const Products = () => {
+  const { currentDate, productFilters, setProductFilters } = useAppContext();
   const [processedProducts, setProcessedProducts] = useState([]);
   const [appliedDiscounts, setAppliedDiscounts] = useState(new Set());
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
@@ -21,12 +23,14 @@ const Products = ({ currentDate }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [showExportModal, setShowExportModal] = useState(false);
   
-  // Filters and search
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('all');
-  const [selectedUrgency, setSelectedUrgency] = useState('all');
-  const [selectedDateRange, setSelectedDateRange] = useState('all');
+  // Filters and search - using shared state
+  const { selectedCategory, selectedUrgency, selectedDateRange, searchTerm } = productFilters;
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
+
+  // Update filter helper
+  const updateFilter = (key, value) => {
+    setProductFilters(prev => ({ ...prev, [key]: value }));
+  };
 
   // Process all products with pricing recommendations
   useEffect(() => {
@@ -164,10 +168,12 @@ const Products = ({ currentDate }) => {
 
   // Clear all filters
   const clearAllFilters = () => {
-    setSearchTerm('');
-    setSelectedCategory('all');
-    setSelectedUrgency('all');
-    setSelectedDateRange('all');
+    setProductFilters({
+      searchTerm: '',
+      selectedCategory: 'all',
+      selectedUrgency: 'all',
+      selectedDateRange: 'all'
+    });
     setSortConfig({ key: null, direction: 'asc' });
     setDisplayCount(50);
   };
@@ -393,7 +399,7 @@ const Products = ({ currentDate }) => {
               type="text"
               placeholder="Search products..."
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={(e) => updateFilter('searchTerm', e.target.value)}
               className="flex-1 px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-walmart-blue focus:border-transparent"
             />
           </div>
@@ -403,7 +409,7 @@ const Products = ({ currentDate }) => {
             <Filter size={16} className="text-gray-500" />
             <select 
               value={selectedCategory} 
-              onChange={(e) => setSelectedCategory(e.target.value)}
+              onChange={(e) => updateFilter('selectedCategory', e.target.value)}
               className="flex-1 px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-walmart-blue focus:border-transparent"
             >
               <option value="all">All Categories</option>
@@ -417,7 +423,7 @@ const Products = ({ currentDate }) => {
           <div>
             <select 
               value={selectedUrgency} 
-              onChange={(e) => setSelectedUrgency(e.target.value)}
+              onChange={(e) => updateFilter('selectedUrgency', e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-walmart-blue focus:border-transparent"
             >
               <option value="all">All Priorities</option>
@@ -432,7 +438,7 @@ const Products = ({ currentDate }) => {
           <div>
             <select 
               value={selectedDateRange} 
-              onChange={(e) => setSelectedDateRange(e.target.value)}
+              onChange={(e) => updateFilter('selectedDateRange', e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-walmart-blue focus:border-transparent"
             >
               <option value="all">All Expiry Dates</option>

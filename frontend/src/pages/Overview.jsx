@@ -12,8 +12,10 @@ import {
   formatDiscount,
   getDaysUntilExpiry
 } from '../utils/pricingLogic';
+import { useAppContext } from '../App';
 
-const Overview = ({ currentDate }) => {
+const Overview = () => {
+  const { currentDate, navigateToProducts } = useAppContext();
   const [processedProducts, setProcessedProducts] = useState([]);
   const [dashboardMetrics, setDashboardMetrics] = useState({});
   const [appliedDiscounts, setAppliedDiscounts] = useState(new Set());
@@ -190,7 +192,7 @@ const Overview = ({ currentDate }) => {
           buttonText="View Critical Items"
           urgency="critical"
           count={criticalProducts.length}
-          onClick={() => {/* Navigate to products page with critical filter */}}
+          onClick={() => navigateToProducts({ selectedUrgency: 'critical' })}
         />
         <ActionCard
           title="High Priority Markdowns"
@@ -198,7 +200,7 @@ const Overview = ({ currentDate }) => {
           buttonText="Review Recommendations"
           urgency="high"
           count={highPriorityProducts.length}
-          onClick={() => {/* Navigate to products page with high priority filter */}}
+          onClick={() => navigateToProducts({ selectedUrgency: 'high' })}
         />
       </div>
 

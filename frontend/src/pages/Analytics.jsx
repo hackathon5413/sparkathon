@@ -12,8 +12,10 @@ import {
   formatCurrency,
   getDaysUntilExpiry
 } from '../utils/pricingLogic';
+import { useAppContext } from '../App';
 
-const Analytics = ({ currentDate }) => {
+const Analytics = () => {
+  const { currentDate } = useAppContext();
   const [processedProducts, setProcessedProducts] = useState([]);
   const [selectedMetric, setSelectedMetric] = useState('savings');
 
@@ -136,12 +138,13 @@ const Analytics = ({ currentDate }) => {
   }, [processedProducts]);
 
   const salesVelocityData = useMemo(() => {
-    return processedProducts.slice(0, 20).map(product => {
+    return processedProducts.slice(0, 15).map(product => {
       const avgSales = product.sales_last_7_days ? 
         product.sales_last_7_days.reduce((sum, day) => sum + day, 0) / 7 : 0;
       
       return {
-        name: product.name.slice(0, 15) + '...',
+        name: product.name.slice(0, 12) + (product.name.length > 12 ? '...' : ''),
+        fullName: product.name,
         velocity: avgSales,
         stock: product.stock,
         daysToSell: avgSales > 0 ? Math.ceil(product.stock / avgSales) : 999
@@ -327,10 +330,10 @@ const Analytics = ({ currentDate }) => {
       <div className="card">
         <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
           <BarChart3 size={20} />
-          Sales Velocity Analysis - Top 20 Products
+          Sales Velocity Analysis - Top 15 Products
         </h3>
-        <ResponsiveContainer width="100%" height={400}>
-          <BarChart data={salesVelocityData} margin={{ top: 20, right: 30, left: 20, bottom: 60 }}>
+        <ResponsiveContainer width="100%" height={350}>
+          <BarChart data={salesVelocityData} margin={{ top: 20, right: 30, left: 20, bottom: 80 }}>
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis 
               dataKey="name" 
@@ -338,9 +341,14 @@ const Analytics = ({ currentDate }) => {
               textAnchor="end"
               height={80}
               interval={0}
+              fontSize={11}
             />
             <YAxis />
             <Tooltip 
+              labelFormatter={(label, payload) => {
+                const item = salesVelocityData.find(d => d.name === label);
+                return item ? item.fullName : label;
+              }}
               formatter={(value, name) => [
                 name === 'velocity' ? `${value.toFixed(1)} units/day` :
                 name === 'stock' ? `${value} units` :
