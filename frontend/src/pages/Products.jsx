@@ -1,13 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { 
-  AlertTriangle, TrendingUp, DollarSign, Package, Clock, ShoppingCart, 
-  Check, X, Download, RefreshCw, Search, ArrowUpDown, ArrowUp, ArrowDown,
-  BarChart3, PieChart, TrendingDown, Filter, Calendar, Eye, EyeOff
+  Search, ArrowUpDown, ArrowUp, ArrowDown, Filter, Check, X, RefreshCw, Download
 } from 'lucide-react';
-import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
-  PieChart as RechartsPieChart, Cell, Pie, AreaChart, Area
-} from 'recharts';
 import { products, productStats } from '../data/products';
 import { 
   calculateOptimalDiscount, 
@@ -15,26 +9,24 @@ import {
   calculatePotentialLoss,
   formatCurrency,
   formatDiscount,
-  getUrgencyColor,
   getDaysUntilExpiry
 } from '../utils/pricingLogic';
 
-const Dashboard = () => {
-  const [currentDate, setCurrentDate] = useState(new Date());
+const Products = ({ currentDate }) => {
   const [processedProducts, setProcessedProducts] = useState([]);
-  const [dashboardMetrics, setDashboardMetrics] = useState({});
-  const [selectedCategory, setSelectedCategory] = useState('all');
-  const [selectedUrgency, setSelectedUrgency] = useState('all');
   const [appliedDiscounts, setAppliedDiscounts] = useState(new Set());
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
   const [displayCount, setDisplayCount] = useState(50);
   const [isLoading, setIsLoading] = useState(false);
   const [showExportModal, setShowExportModal] = useState(false);
+  
+  // Filters and search
   const [searchTerm, setSearchTerm] = useState('');
-  const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
-  const [showCharts, setShowCharts] = useState(true);
+  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [selectedUrgency, setSelectedUrgency] = useState('all');
   const [selectedDateRange, setSelectedDateRange] = useState('all');
+  const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
 
   // Process all products with pricing recommendations
   useEffect(() => {
@@ -56,28 +48,6 @@ const Dashboard = () => {
     });
 
     setProcessedProducts(processed);
-
-    // Calculate dashboard metrics
-    const criticalProducts = processed.filter(p => p.urgency === 'critical').length;
-    const highPriorityProducts = processed.filter(p => p.urgency === 'high').length;
-    const totalDiscountedProducts = processed.filter(p => p.discount > 0).length;
-    const appliedProducts = processed.filter(p => appliedDiscounts.has(p.id));
-    const totalPotentialSavings = processed.reduce((sum, p) => sum + p.savings, 0);
-    const totalPotentialLoss = processed.reduce((sum, p) => sum + p.potentialLoss, 0);
-    const actualSavings = appliedProducts.reduce((sum, p) => sum + p.savings, 0);
-    const inventoryValue = processed.reduce((sum, p) => sum + (p.price * p.stock), 0);
-
-    setDashboardMetrics({
-      criticalProducts,
-      highPriorityProducts,
-      totalDiscountedProducts,
-      totalPotentialSavings,
-      totalPotentialLoss,
-      actualSavings,
-      appliedCount: appliedDiscounts.size,
-      inventoryValue,
-      wasteReductionPercent: ((totalPotentialSavings / (totalPotentialSavings + totalPotentialLoss)) * 100) || 0
-    });
   }, [currentDate, appliedDiscounts]);
 
   // Filter and search products
@@ -121,55 +91,6 @@ const Dashboard = () => {
     return filtered;
   }, [processedProducts, selectedCategory, selectedUrgency, searchTerm, selectedDateRange, sortConfig]);
 
-  // Chart data preparations
-  const urgencyData = useMemo(() => {
-    const data = ['critical', 'high', 'medium', 'low', 'none'].map(urgency => {
-      const count = processedProducts.filter(p => p.urgency === urgency).length;
-      return {
-        name: urgency.charAt(0).toUpperCase() + urgency.slice(1),
-        value: count,
-        fill: urgency === 'critical' ? '#dc2626' : 
-              urgency === 'high' ? '#d97706' : 
-              urgency === 'medium' ? '#ca8a04' : 
-              urgency === 'low' ? '#16a34a' : '#6b7280'
-      };
-    }).filter(item => item.value > 0);
-    return data;
-  }, [processedProducts]);
-
-  const categoryData = useMemo(() => {
-    const categories = {};
-    processedProducts.forEach(product => {
-      if (!categories[product.category]) {
-        categories[product.category] = {
-          name: product.category.charAt(0).toUpperCase() + product.category.slice(1),
-          total: 0,
-          withDiscount: 0,
-          potentialSavings: 0
-        };
-      }
-      categories[product.category].total += 1;
-      if (product.discount > 0) {
-        categories[product.category].withDiscount += 1;
-      }
-      categories[product.category].potentialSavings += product.savings;
-    });
-    return Object.values(categories);
-  }, [processedProducts]);
-
-  const expiryTrendData = useMemo(() => {
-    const trends = [];
-    for (let i = 0; i <= 14; i++) {
-      const count = processedProducts.filter(p => p.daysToExpiry === i).length;
-      trends.push({
-        day: i,
-        count,
-        label: i === 0 ? 'Today' : i === 1 ? 'Tomorrow' : `${i} days`
-      });
-    }
-    return trends;
-  }, [processedProducts]);
-
   // Sorting function
   const handleSort = (key) => {
     let direction = 'asc';
@@ -212,7 +133,7 @@ const Dashboard = () => {
   // Apply all recommended discounts
   const applyAllRecommendations = () => {
     setIsLoading(true);
-    const productsWithDiscounts = filteredProducts.filter(p => p.discount > 0);
+    const productsWithDiscounts = filteredProducts.filter(p => p.discount > 0 && !p.isApplied);
     const newAppliedDiscounts = new Set([...appliedDiscounts]);
     
     productsWithDiscounts.forEach(product => {
@@ -241,11 +162,22 @@ const Dashboard = () => {
     setTimeout(() => setShowSuccessMessage(false), 3000);
   };
 
+  // Clear all filters
+  const clearAllFilters = () => {
+    setSearchTerm('');
+    setSelectedCategory('all');
+    setSelectedUrgency('all');
+    setSelectedDateRange('all');
+    setSortConfig({ key: null, direction: 'asc' });
+    setDisplayCount(50);
+  };
+
   // Export data functionality
   const exportData = (format) => {
     const exportableData = filteredProducts.map(product => ({
       name: product.name,
       category: product.category,
+      section: product.section,
       stock: product.stock,
       price: product.price,
       expiryDate: product.expiry_date,
@@ -255,13 +187,14 @@ const Dashboard = () => {
       priority: product.urgency,
       reason: product.reason,
       isApplied: product.isApplied,
-      potentialSavings: product.savings
+      potentialSavings: product.savings,
+      potentialLoss: product.potentialLoss
     }));
 
     if (format === 'json') {
       const dataStr = JSON.stringify(exportableData, null, 2);
       const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
-      const exportFileDefaultName = `walmart-pricing-${new Date().toISOString().split('T')[0]}.json`;
+      const exportFileDefaultName = `walmart-products-${new Date().toISOString().split('T')[0]}.json`;
       const linkElement = document.createElement('a');
       linkElement.setAttribute('href', dataUri);
       linkElement.setAttribute('download', exportFileDefaultName);
@@ -272,7 +205,7 @@ const Dashboard = () => {
         ...exportableData.map(row => Object.values(row).join(','))
       ].join('\n');
       const dataUri = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csvContent);
-      const exportFileDefaultName = `walmart-pricing-${new Date().toISOString().split('T')[0]}.csv`;
+      const exportFileDefaultName = `walmart-products-${new Date().toISOString().split('T')[0]}.csv`;
       const linkElement = document.createElement('a');
       linkElement.setAttribute('href', dataUri);
       linkElement.setAttribute('download', exportFileDefaultName);
@@ -284,22 +217,6 @@ const Dashboard = () => {
     setShowSuccessMessage(true);
     setTimeout(() => setShowSuccessMessage(false), 3000);
   };
-
-  const MetricCard = ({ title, value, subtitle, icon: Icon, colorClasses = "from-walmart-blue to-walmart-blue-dark", trend = null }) => (
-    <div className={`bg-gradient-to-br ${colorClasses} text-white rounded-xl p-6 text-center shadow-lg min-h-[140px] flex flex-col justify-center transition-all duration-300 hover:scale-105 hover:shadow-xl`}>
-      <div className="flex items-center justify-center mb-2">
-        <Icon size={24} />
-        {trend && (
-          <span className={`ml-2 text-xs px-2 py-1 rounded-full ${trend > 0 ? 'bg-green-500' : 'bg-red-500'}`}>
-            {trend > 0 ? '+' : ''}{trend}%
-          </span>
-        )}
-      </div>
-      <div className="text-2xl md:text-3xl font-bold mb-2 leading-tight break-words">{value}</div>
-      <div className="text-sm opacity-90 leading-tight">{title}</div>
-      {subtitle && <div className="text-xs mt-1 opacity-80">{subtitle}</div>}
-    </div>
-  );
 
   const SortableHeader = ({ children, sortKey, className = "" }) => (
     <th 
@@ -368,7 +285,7 @@ const Dashboard = () => {
             {product.urgency.toUpperCase()}
           </span>
         </td>
-        <td className="px-3 py-3 text-sm text-gray-600">
+        <td className="px-3 py-3 text-sm text-gray-600 max-w-xs truncate">
           {product.reason}
         </td>
         <td className="px-3 py-3">
@@ -399,7 +316,7 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-8">
+    <div>
       {/* Success Message */}
       {showSuccessMessage && (
         <div className="fixed top-4 right-4 z-50 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded-lg shadow-lg animate-bounce">
@@ -413,7 +330,7 @@ const Dashboard = () => {
           <div className="bg-white rounded-lg p-6 w-96 transform transition-all duration-300 scale-100">
             <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
               <Download size={20} />
-              Export Data
+              Export Products Data
             </h3>
             <p className="text-gray-600 mb-4">Choose export format for {filteredProducts.length} products:</p>
             <div className="flex gap-3">
@@ -440,37 +357,20 @@ const Dashboard = () => {
         </div>
       )}
 
-      {/* Header */}
+      {/* Page Header */}
       <div className="mb-8">
-        <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center gap-4">
+        <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl lg:text-4xl font-bold text-walmart-blue mb-2 flex items-center gap-3">
-              <BarChart3 size={40} />
-              Walmart Dynamic Pricing Dashboard
-            </h1>
-            <p className="text-gray-600">AI-Powered Markdown Recommendations to Reduce Food Waste</p>
-            {dashboardMetrics.appliedCount > 0 && (
-              <p className="text-green-600 font-medium mt-1 flex items-center gap-2">
-                <Check size={16} />
-                {dashboardMetrics.appliedCount} discounts applied | 
-                Actual savings: {formatCurrency(dashboardMetrics.actualSavings || 0)}
-              </p>
-            )}
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">Products Management</h2>
+            <p className="text-gray-600">Complete product inventory with AI-powered pricing recommendations</p>
           </div>
-          <div className="flex flex-wrap items-center gap-3">
-            <button 
-              onClick={() => setShowCharts(!showCharts)}
-              className="border border-gray-300 px-4 py-2 rounded hover:bg-gray-50 flex items-center gap-2 transition-colors"
-            >
-              {showCharts ? <EyeOff size={16} /> : <Eye size={16} />}
-              {showCharts ? 'Hide' : 'Show'} Charts
-            </button>
+          <div className="flex gap-3">
             <button 
               onClick={() => setShowExportModal(true)}
-              className="btn-primary flex items-center gap-2 hover:scale-105 transition-transform"
+              className="btn-primary flex items-center gap-2"
             >
               <Download size={16} />
-              Export Data
+              Export
             </button>
             <button 
               onClick={resetAllDiscounts}
@@ -479,144 +379,14 @@ const Dashboard = () => {
               <RefreshCw size={16} />
               Reset All
             </button>
-            <div className="flex items-center gap-2">
-              <Calendar size={16} className="text-gray-500" />
-              <input 
-                type="date" 
-                value={currentDate.toISOString().split('T')[0]}
-                onChange={(e) => setCurrentDate(new Date(e.target.value))}
-                className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-walmart-blue focus:border-transparent"
-              />
-            </div>
           </div>
         </div>
       </div>
 
-      {/* Metrics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6 mb-8">
-        <MetricCard 
-          title="Critical Products" 
-          value={dashboardMetrics.criticalProducts || 0}
-          subtitle="Need immediate action"
-          icon={AlertTriangle}
-          colorClasses="from-red-600 to-red-700"
-          trend={-5}
-        />
-        <MetricCard 
-          title="High Priority" 
-          value={dashboardMetrics.highPriorityProducts || 0}
-          subtitle="Apply discounts today"
-          icon={Clock}
-          colorClasses="from-orange-600 to-orange-700"
-          trend={2}
-        />
-        <MetricCard 
-          title="Revenue at Risk" 
-          value={formatCurrency(dashboardMetrics.totalPotentialLoss || 0)}
-          subtitle="Without action"
-          icon={TrendingDown}
-          colorClasses="from-purple-600 to-purple-700"
-          trend={-12}
-        />
-        <MetricCard 
-          title="Potential Savings" 
-          value={formatCurrency(dashboardMetrics.totalPotentialSavings || 0)}
-          subtitle="With AI recommendations"
-          icon={DollarSign}
-          colorClasses="from-green-600 to-green-700"
-          trend={18}
-        />
-        <MetricCard 
-          title="Waste Reduction" 
-          value={`${(dashboardMetrics.wasteReductionPercent || 0).toFixed(1)}%`}
-          subtitle="Expected improvement"
-          icon={Package}
-          colorClasses="from-cyan-600 to-cyan-700"
-          trend={25}
-        />
-        <MetricCard 
-          title="Applied Discounts" 
-          value={dashboardMetrics.appliedCount || 0}
-          subtitle={`of ${dashboardMetrics.totalDiscountedProducts || 0} recommended`}
-          icon={ShoppingCart}
-          colorClasses="from-walmart-blue to-walmart-blue-dark"
-        />
-      </div>
-
-      {/* Charts Section */}
-      {showCharts && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6 mb-8">
-          {/* Priority Distribution Pie Chart */}
-          <div className="card">
-            <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-              <PieChart size={20} />
-              Priority Distribution
-            </h3>
-            <ResponsiveContainer width="100%" height={250}>
-              <RechartsPieChart>
-                <Pie
-                  data={urgencyData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={60}
-                  outerRadius={100}
-                  paddingAngle={5}
-                  dataKey="value"
-                >
-                  {urgencyData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.fill} />
-                  ))}
-                </Pie>
-                <Tooltip />
-                <Legend />
-              </RechartsPieChart>
-            </ResponsiveContainer>
-          </div>
-
-          {/* Category Analysis Bar Chart */}
-          <div className="card">
-            <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-              <BarChart3 size={20} />
-              Category Analysis
-            </h3>
-            <ResponsiveContainer width="100%" height={250}>
-              <BarChart data={categoryData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" />
-                <YAxis />
-                <Tooltip />
-                <Legend />
-                <Bar dataKey="total" fill="#0071ce" name="Total Products" />
-                <Bar dataKey="withDiscount" fill="#16a34a" name="With Discount" />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-
-          {/* Expiry Trend Line Chart */}
-          <div className="card">
-            <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-              <TrendingUp size={20} />
-              Expiry Timeline
-            </h3>
-            <ResponsiveContainer width="100%" height={250}>
-              <AreaChart data={expiryTrendData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="day" />
-                <YAxis />
-                <Tooltip 
-                  labelFormatter={(value) => `${value} days to expiry`}
-                  formatter={(value) => [value, 'Products']}
-                />
-                <Area type="monotone" dataKey="count" stroke="#dc2626" fill="#fca5a5" />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-      )}
-
-      {/* Advanced Filters */}
+      {/* Filters and Search */}
       <div className="card mb-6">
-        <div className="flex flex-col lg:flex-row gap-4 lg:items-center">
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 mb-4">
+          {/* Search */}
           <div className="flex items-center gap-2">
             <Search size={16} className="text-gray-500" />
             <input
@@ -624,15 +394,17 @@ const Dashboard = () => {
               placeholder="Search products..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-walmart-blue focus:border-transparent w-48"
+              className="flex-1 px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-walmart-blue focus:border-transparent"
             />
           </div>
+
+          {/* Category Filter */}
           <div className="flex items-center gap-2">
             <Filter size={16} className="text-gray-500" />
             <select 
               value={selectedCategory} 
               onChange={(e) => setSelectedCategory(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-walmart-blue focus:border-transparent"
+              className="flex-1 px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-walmart-blue focus:border-transparent"
             >
               <option value="all">All Categories</option>
               {productStats.categories.map(cat => (
@@ -640,12 +412,13 @@ const Dashboard = () => {
               ))}
             </select>
           </div>
-          <div className="flex items-center gap-2">
-            <label className="text-sm font-medium text-gray-700">Priority:</label>
+
+          {/* Priority Filter */}
+          <div>
             <select 
               value={selectedUrgency} 
               onChange={(e) => setSelectedUrgency(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-walmart-blue focus:border-transparent"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-walmart-blue focus:border-transparent"
             >
               <option value="all">All Priorities</option>
               <option value="critical">Critical</option>
@@ -654,46 +427,61 @@ const Dashboard = () => {
               <option value="low">Low</option>
             </select>
           </div>
-          <div className="flex items-center gap-2">
-            <label className="text-sm font-medium text-gray-700">Expires in:</label>
+
+          {/* Date Range Filter */}
+          <div>
             <select 
               value={selectedDateRange} 
               onChange={(e) => setSelectedDateRange(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-walmart-blue focus:border-transparent"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-walmart-blue focus:border-transparent"
             >
-              <option value="all">All Dates</option>
-              <option value="1">1 Day</option>
-              <option value="3">3 Days</option>
-              <option value="7">1 Week</option>
-              <option value="14">2 Weeks</option>
+              <option value="all">All Expiry Dates</option>
+              <option value="1">Expires in 1 Day</option>
+              <option value="3">Expires in 3 Days</option>
+              <option value="7">Expires in 1 Week</option>
+              <option value="14">Expires in 2 Weeks</option>
             </select>
           </div>
-          <div className="lg:ml-auto flex gap-3">
+
+          {/* Clear Filters */}
+          <div>
             <button 
-              onClick={applyAllRecommendations}
-              disabled={isLoading || filteredProducts.filter(p => p.discount > 0 && !p.isApplied).length === 0}
-              className="btn-success w-full lg:w-auto flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed hover:scale-105 transition-transform"
+              onClick={clearAllFilters}
+              className="w-full border border-gray-300 px-4 py-2 rounded hover:bg-gray-50 text-sm transition-colors"
             >
-              {isLoading ? (
-                <>
-                  <RefreshCw size={16} className="animate-spin" />
-                  Applying...
-                </>
-              ) : (
-                <>
-                  <Check size={16} />
-                  Apply All ({filteredProducts.filter(p => p.discount > 0 && !p.isApplied).length})
-                </>
-              )}
+              Clear Filters
             </button>
           </div>
         </div>
-        <div className="mt-4 text-sm text-gray-600">
-          Showing {filteredProducts.length} of {processedProducts.length} products
+
+        {/* Action Bar */}
+        <div className="flex items-center justify-between pt-4 border-t border-gray-200">
+          <div className="text-sm text-gray-600">
+            Showing {Math.min(displayCount, filteredProducts.length)} of {filteredProducts.length} products
+            {searchTerm || selectedCategory !== 'all' || selectedUrgency !== 'all' || selectedDateRange !== 'all' ? 
+              ` (filtered from ${processedProducts.length} total)` : ''}
+          </div>
+          <button 
+            onClick={applyAllRecommendations}
+            disabled={isLoading || filteredProducts.filter(p => p.discount > 0 && !p.isApplied).length === 0}
+            className="btn-success flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed hover:scale-105 transition-transform"
+          >
+            {isLoading ? (
+              <>
+                <RefreshCw size={16} className="animate-spin" />
+                Applying...
+              </>
+            ) : (
+              <>
+                <Check size={16} />
+                Apply All Recommendations ({filteredProducts.filter(p => p.discount > 0 && !p.isApplied).length})
+              </>
+            )}
+          </button>
         </div>
       </div>
 
-      {/* Enhanced Sortable Table */}
+      {/* Products Table */}
       <div className="card p-0">
         <div className="overflow-x-auto">
           <table className="table">
@@ -716,6 +504,8 @@ const Dashboard = () => {
             </tbody>
           </table>
         </div>
+
+        {/* Load More */}
         {filteredProducts.length > displayCount && (
           <div className="px-6 py-4 text-center bg-gray-50 border-t border-gray-200">
             <p className="text-gray-600 mb-3">
@@ -725,8 +515,16 @@ const Dashboard = () => {
               onClick={loadMore}
               className="btn-primary hover:scale-105 transition-transform"
             >
-              Load More Products
+              Load More Products (+50)
             </button>
+          </div>
+        )}
+
+        {/* No Results */}
+        {filteredProducts.length === 0 && (
+          <div className="px-6 py-12 text-center">
+            <div className="text-gray-500 mb-2">No products found</div>
+            <div className="text-sm text-gray-400">Try adjusting your filters or search terms</div>
           </div>
         )}
       </div>
@@ -734,4 +532,4 @@ const Dashboard = () => {
   );
 };
 
-export default Dashboard;
+export default Products;
