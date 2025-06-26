@@ -168,7 +168,7 @@ export function calculateOptimalDiscount(product, currentDate = new Date()) {
   switch (stockPressure) {
     case 'very_high':
       stockMultiplier = 1.8;
-      reason += ' + Very high stock levels';
+      reasonParts.push('Very high stock levels');
       if (urgency === 'none') {
         urgency = 'medium';
         action = 'consider_discount';
