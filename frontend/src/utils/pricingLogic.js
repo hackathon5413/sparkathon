@@ -902,9 +902,7 @@ export function getCompetitivePricingInsights(product) {
   };
 }
 
-/**
- * Export all enhanced functions for easy import
- */
+
 export const PricingEngine = {
   // Core functions
   calculateOptimalDiscount,
