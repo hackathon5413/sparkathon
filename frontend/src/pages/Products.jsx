@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { 
-  Search, ArrowUpDown, ArrowUp, ArrowDown, Filter, Check, X, RefreshCw, Download
+  Search, ArrowUpDown, ArrowUp, ArrowDown, Filter, Check, X, RefreshCw, Download, Printer
 } from 'lucide-react';
+import { generateDiscountCards, downloadPDF } from '../utils/pdfGenerator';
 import { products, productStats } from '../data/products';
 import { 
   calculateOptimalDiscount, 
@@ -23,6 +24,7 @@ const Products = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [showExportModal, setShowExportModal] = useState(false);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
   
   // Filters and search - using shared state
   const { selectedCategory, selectedUrgency, selectedDateRange, searchTerm } = productFilters;
@@ -180,9 +182,10 @@ const Products = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, [loadMore]);
 
-  // Reset display count when filters change
+  // Reset display count when filters change - DON'T clear selection
   useEffect(() => {
     setDisplayCount(50);
+    // Removed: setSelectedProducts(new Set()); // Don't clear selection on filter change
   }, [selectedCategory, selectedUrgency, selectedDateRange, searchTerm, sortConfig]);
 
   // Reset all applied discounts
@@ -251,6 +254,38 @@ const Products = () => {
     setTimeout(() => setShowSuccessMessage(false), 3000);
   };
 
+  const generateSingleCard = async (product) => {
+    setIsGeneratingPDF(true);
+    try {
+      const pdf = await generateDiscountCards([product]);
+      downloadPDF(pdf, `card-${product.name.replace(/\s+/g, '-').toLowerCase()}`);
+      setSuccessMessage(`🖨️ Card generated for ${product.name}`);
+      setShowSuccessMessage(true);
+      setTimeout(() => setShowSuccessMessage(false), 3000);
+    } catch (error) {
+      console.error('PDF generation failed:', error);
+    } finally {
+      setIsGeneratingPDF(false);
+    }
+  };
+
+  const generateSelectedCards = async (products = null) => {
+    if (!products || products.length === 0) return;
+    
+    setIsGeneratingPDF(true);
+    try {
+      const pdf = await generateDiscountCards(products);
+      downloadPDF(pdf, `discount-cards`);
+      setSuccessMessage(`🖨️ Generated ${products.length} discount cards`);
+      setShowSuccessMessage(true);
+      setTimeout(() => setShowSuccessMessage(false), 3000);
+    } catch (error) {
+      console.error('PDF generation failed:', error);
+    } finally {
+      setIsGeneratingPDF(false);
+    }
+  };
+
   const SortableHeader = ({ children, sortKey, className = "" }) => (
     <th 
       className={`px-3 py-3 text-left bg-gray-50 font-semibold text-gray-700 border-b border-gray-200 cursor-pointer hover:bg-gray-100 transition-colors ${className}`}
@@ -266,6 +301,7 @@ const Products = () => {
   const ProductRow = ({ product }) => {
     const badgeClass = product.urgency === 'critical' ? 'badge-danger' : 
                       product.urgency === 'high' ? 'badge-warning' : 'badge-success';
+    const hasDiscount = product.discount > 0;
 
     return (
       <tr className={`${product.isApplied ? 'bg-green-50' : ''} hover:bg-gray-50 transition-colors`}>
@@ -322,27 +358,37 @@ const Products = () => {
           {product.reason}
         </td>
         <td className="px-3 py-3">
-          {product.discount > 0 && (
-            <div className="flex gap-2">
-              {!product.isApplied ? (
+          <div className="flex gap-1">
+            {product.discount > 0 && (
+              <>
+                {!product.isApplied ? (
+                  <button 
+                    onClick={() => applyDiscount(product.id, product.name)}
+                    className="btn-primary text-xs py-1 px-2 flex items-center gap-1 hover:scale-105 transition-transform"
+                  >
+                    <Check size={12} />
+                    Apply
+                  </button>
+                ) : (
+                  <button 
+                    onClick={() => removeDiscount(product.id, product.name)}
+                    className="bg-red-600 hover:bg-red-700 text-white text-xs py-1 px-2 rounded flex items-center gap-1 hover:scale-105 transition-transform"
+                  >
+                    <X size={12} />
+                    Remove
+                  </button>
+                )}
                 <button 
-                  onClick={() => applyDiscount(product.id, product.name)}
-                  className="btn-primary text-sm py-1 px-3 flex items-center gap-1 hover:scale-105 transition-transform"
+                  onClick={() => generateSingleCard(product)}
+                  disabled={isGeneratingPDF}
+                  className="bg-purple-600 hover:bg-purple-700 text-white text-xs py-1 px-2 rounded flex items-center gap-1 hover:scale-105 transition-transform disabled:opacity-50"
                 >
-                  <Check size={14} />
-                  Apply
+                  <Printer size={12} />
+                  Print
                 </button>
-              ) : (
-                <button 
-                  onClick={() => removeDiscount(product.id, product.name)}
-                  className="bg-red-600 hover:bg-red-700 text-white text-sm py-1 px-3 rounded flex items-center gap-1 hover:scale-105 transition-transform"
-                >
-                  <X size={14} />
-                  Remove
-                </button>
-              )}
-            </div>
-          )}
+              </>
+            )}
+          </div>
         </td>
       </tr>
     );
@@ -494,23 +540,44 @@ const Products = () => {
             {searchTerm || selectedCategory !== 'all' || selectedUrgency !== 'all' || selectedDateRange !== 'all' ? 
               ` (filtered from ${processedProducts.length} total)` : ''}
           </div>
-          <button 
-            onClick={applyAllRecommendations}
-            disabled={isLoading || filteredProducts.filter(p => p.discount > 0 && !p.isApplied).length === 0}
-            className="btn-success flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed hover:scale-105 transition-transform text-sm py-2 px-4"
-          >
-            {isLoading ? (
-              <>
-                <RefreshCw size={16} className="animate-spin" />
-                Applying...
-              </>
-            ) : (
-              <>
-                <Check size={16} />
-                Apply All ({filteredProducts.filter(p => p.discount > 0 && !p.isApplied).length})
-              </>
+          <div className="flex gap-2">
+            {appliedDiscounts.size > 0 && (
+              <button 
+                onClick={() => generateSelectedCards(filteredProducts.filter(p => p.isApplied))}
+                disabled={isGeneratingPDF}
+                className="bg-purple-600 hover:bg-purple-700 text-white px-3 py-2 rounded flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed text-sm transition-colors"
+              >
+                {isGeneratingPDF ? (
+                  <>
+                    <RefreshCw size={16} className="animate-spin" />
+                    Generating...
+                  </>
+                ) : (
+                  <>
+                    <Printer size={16} />
+                    Print Applied Discounts ({appliedDiscounts.size})
+                  </>
+                )}
+              </button>
             )}
-          </button>
+            <button 
+              onClick={applyAllRecommendations}
+              disabled={isLoading || filteredProducts.filter(p => p.discount > 0 && !p.isApplied).length === 0}
+              className="btn-success flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed hover:scale-105 transition-transform text-sm py-2 px-4"
+            >
+              {isLoading ? (
+                <>
+                  <RefreshCw size={16} className="animate-spin" />
+                  Applying...
+                </>
+              ) : (
+                <>
+                  <Check size={16} />
+                  Apply All ({filteredProducts.filter(p => p.discount > 0 && !p.isApplied).length})
+                </>
+              )}
+            </button>
+          </div>
         </div>
       </div>
 
@@ -527,7 +594,7 @@ const Products = () => {
                 <SortableHeader sortKey="discount">Discount</SortableHeader>
                 <SortableHeader sortKey="urgency">Priority</SortableHeader>
                 <th className="px-3 py-3 text-left bg-gray-50 font-semibold text-gray-700 border-b border-gray-200">Reason</th>
-                <th className="px-3 py-3 text-left bg-gray-50 font-semibold text-gray-700 border-b border-gray-200">Action</th>
+                <th className="px-3 py-3 text-left bg-gray-50 font-semibold text-gray-700 border-b border-gray-200">Actions</th>
               </tr>
             </thead>
             <tbody>
