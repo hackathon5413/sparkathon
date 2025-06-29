@@ -178,14 +178,12 @@ export function getUrgencyColor(urgency) {
  * Format currency for display with smart number formatting
  */
 export function formatCurrency(amount) {
-  if (amount >= 10000000) { // 1 crore+
-    return `₹${(amount / 10000000).toFixed(1)}Cr`;
-  } else if (amount >= 100000) { // 1 lakh+
-    return `₹${(amount / 100000).toFixed(1)}L`;
+  if (amount >= 1000000) { // 1 million+
+    return `${(amount / 1000000).toFixed(1)}M`;
   } else if (amount >= 1000) { // 1 thousand+
-    return `₹${(amount / 1000).toFixed(1)}K`;
+    return `${(amount / 1000).toFixed(1)}K`;
   } else {
-    return `₹${amount.toFixed(2)}`;
+    return `${amount.toFixed(2)}`;
   }
 }
 

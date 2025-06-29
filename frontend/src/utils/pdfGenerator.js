@@ -76,7 +76,7 @@ const drawCard = async (pdf, product, position) => {
   pdf.setTextColor(80, 80, 80); // Darker gray for better visibility
   pdf.setFontSize(16); // Larger font for original price
   pdf.setFont('helvetica', 'bold');
-  const originalPriceText = `Rs.${product.price.toFixed(2)}`;
+  const originalPriceText = `${product.price.toFixed(2)}`;
   pdf.text(originalPriceText, x + 4, priceStartY + 6);
   const priceWidth = pdf.getTextWidth(originalPriceText);
   
@@ -91,7 +91,7 @@ const drawCard = async (pdf, product, position) => {
   pdf.setTextColor(220, 38, 127);
   pdf.setFontSize(14); // Smaller than original price
   pdf.setFont('helvetica', 'bold');
-  pdf.text(`Rs.${product.discountedPrice.toFixed(2)}`, x + 4, priceStartY + 16);
+  pdf.text(`${product.discountedPrice.toFixed(2)}`, x + 4, priceStartY + 16);
   
   // Discount badge with better design
   const badgeX = x + CARD_CONFIG.width - 18;
